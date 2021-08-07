@@ -1,26 +1,80 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div class="app">
+    <form @submit.prevent>
+      <h4>Создание поста</h4>
+      <input v-bind:value="title" @input="title = $event.target.value" class="input" type="text" placeholder="Название">
+      <input v-bind:value="body" @input="body = $event.target.value" class="input" type="text" placeholder="Описание">
+      <button class="btn" @click="createPost">Создать</button>
+    </form>
+    <div class="post" v-for="post in posts"  v-bind:key="post">
+      <div><strong>Название: </strong>{{ post.title }}</div>
+      <div><strong>Описание: </strong>{{ post.body }}</div>
+    </div>
+  </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
-
 export default {
-  name: 'App',
-  components: {
-    HelloWorld
+  data() {
+    return {
+      posts: [
+        {id: 1, title: 'Java Script', body: 'Описание поста 1'},
+        {id: 2, title: 'React', body: 'Описание поста 2'},
+        {id: 3, title: 'Vue3', body: 'Описание поста 3'},
+      ],
+      title:'',
+      body: ''
+    }
+  },
+  methods: {
+    createPost(){
+      const newPost = {
+        id:Date.now(),
+        title: this.title,
+        body: this.body
+      }
+      this.posts.push(newPost)
+      this.title = '',
+      this.body = ''
+    },
+    inputTitle(e){
+      this.title = e.target.value
+    }
   }
 }
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.app{
+  padding: 20px;
+}
+
+.post {
+  padding: 15px;
+  border: 2px solid teal;
+  margin-top: 15px;
+}
+form{
+  display: flex;
+  flex-direction: column;
+}
+.input{
+  width: 100%;
+  border: 1px solid teal;
+  padding: 10px 15px;
+  margin-top: 15px;
+}
+.btn{
+  margin-top: 15px;
+  align-self: flex-end;
+  padding: 10px 15px;
+  background: none;
+  color: teal;
+  border: 1px solid teal;
 }
 </style>
