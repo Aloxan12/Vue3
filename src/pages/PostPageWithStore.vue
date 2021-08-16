@@ -1,27 +1,23 @@
 <template>
   <div>
-    <h1>{{$store.state.isAuth ? 'Пользователь автаризован' : 'Пользователь не автаризован'}}</h1>
-    <h1>{{$store.state.likes}}</h1>
-    <div>
-      <my-button @click="$store.commit('incLikes')">Лайк</my-button>
-      <my-button @click="$store.commit('decLikes')">Дизлайк</my-button>
-    </div>
     <h1>Страница с постами</h1>
-    <my-input
-        v-focus
-        v-model="searchQuery"
-        placeholder="Поиск..."
-    />
+        <my-input
+            v-focus
+            :model-value="searchQuery"
+            @update:model-value="setSearchQuery"
+            placeholder="Поиск..."
+        />
     <div class="app_btns">
       <my-button
           @click="showDialog"
       >
         Создать пост
       </my-button>
-      <my-select
-          v-model="selectedSort"
-          :options="sortOptions"
-      />
+            <my-select
+                model-value="selectedSort"
+                @update:model-value="setSelectedSort"
+                :options="sortOptions"
+            />
     </div>
     <my-dialog v-model:show="dialogVisible">
       <post-form @create="createPost"/>
@@ -33,18 +29,6 @@
     />
     <div v-else>Loading...</div>
     <div v-intersection="loadMorePosts" class="observer"></div>
-    <!--    <div class="page_wrapper">-->
-    <!--      <div-->
-    <!--          v-for="pageNumber in totalPage"-->
-    <!--          v-bind:key="pageNumber"-->
-    <!--          class="page"-->
-    <!--          :class="{-->
-    <!--        'current-page': page === pageNumber-->
-    <!--      }"-->
-    <!--          @click="changePage(pageNumber)"-->
-    <!--      >{{ pageNumber }}-->
-    <!--      </div>-->
-    <!--    </div>-->
   </div>
 </template>
 
@@ -53,9 +37,9 @@ import PostForm from "@/components/PostForm";
 import PostLists from "@/components/PostLists";
 import MyDialog from "@/components/UI/MyDialog";
 import MyButton from "@/components/UI/MyButton";
-import axios from "axios";
 import MySelect from "@/components/UI/MySelect";
 import MyInput from "@/components/UI/MyInput";
+import {mapActions, mapState, mapGetters, mapMutations} from 'vuex'
 
 export default {
   components: {
@@ -67,21 +51,19 @@ export default {
   },
   data() {
     return {
-      posts: [],
       dialogVisible: false,
-      isPostsLoading: false,
-      selectedSort: '',
-      searchQuery: '',
-      page: 1,
-      limit: 10,
-      totalPage: 0,
-      sortOptions: [
-        {value: 'title', name: 'По названию'},
-        {value: 'body', name: 'По содержанию'},
-      ]
     }
   },
   methods: {
+    ...mapMutations({
+      setPage: 'post/setPage',
+      setSearchQuery:'post/setSearchQuery',
+      setSelectedSort:'post/setSelectedSort'
+    }),
+    ...mapActions({
+      loadMorePosts: 'post/loadMorePosts',
+      fetchPosts: 'post/fetchPosts',
+    }),
     createPost(post) {
       this.posts.push(post);
       this.dialogVisible = false;
@@ -92,70 +74,26 @@ export default {
     showDialog() {
       this.dialogVisible = true;
     },
-    // changePage(pageNumber) {
-    //   this.page = pageNumber
-    // },
-    async fetchPosts() {
-      try {
-        this.isPostsLoading = true;
-        const response = await axios.get('https://jsonplaceholder.typicode.com/posts', {
-          params: {
-            _page: this.page,
-            _limit: this.limit
-          }
-        });
-        this.totalPages = Math.ceil(response.headers['x-total-count'] / this.limit)
-        this.posts = response.data;
-      } catch (e) {
-        alert('Ошибка')
-      } finally {
-        this.isPostsLoading = false;
-      }
-    },
-    async loadMorePosts() {
-      try {
-        this.page += 1;
-        const response = await axios.get('https://jsonplaceholder.typicode.com/posts', {
-          params: {
-            _page: this.page,
-            _limit: this.limit
-          }
-        });
-        this.totalPages = Math.ceil(response.headers['x-total-count'] / this.limit)
-        this.posts = [...this.posts, ...response.data];
-      } catch (e) {
-        alert('Ошибка')
-      }
-    }
   },
   mounted() {
     this.fetchPosts();
-    // const options = {
-    //   rootMargin: '0px',
-    //   threshold: 1.0
-    // }
-    // const callback = (entries, observer) => {
-    //   console.log(observer)
-    //   if (entries[0].isIntersecting && this.page < this.totalPages) {
-    //     this.loadMorePosts()
-    //   }
-    // };
-    // const observer = new IntersectionObserver(callback, options);
-    // observer.observe(this.$refs.observer);
   },
   computed: {
-    sortedPosts() {
-      return [...this.posts].sort((post1, post2) => post1[this.selectedSort]?.localeCompare(post2[this.selectedSort]))
-    },
-    sortedAndSearchedPosts() {
-      return this.sortedPosts.filter(post => post.title.toLowerCase().includes(this.searchQuery.toLowerCase()))
-    }
+    ...mapState({
+      posts: state => state.post.posts,
+      isPostsLoading: state => state.post.isPostsLoading,
+      selectedSort: state => state.post.selectedSort,
+      searchQuery: state => state.post.searchQuery,
+      page: state => state.post.page,
+      limit: state => state.post.limit,
+      totalPages: state => state.post.totalPages,
+    }),
+    ...mapGetters({
+      sortedPosts: 'post/sortedPosts',
+      sortedAndSearchedPosts: 'post/sortedAndSearchedPosts'
+    })
   },
-  watch: {
-    // page(){
-    //   this.fetchPosts()
-    // }
-  }
+  watch: {}
 }
 </script>
 
@@ -167,18 +105,22 @@ export default {
   display: flex;
   justify-content: space-between;
 }
+
 .page_wrapper {
   display: flex;
   margin-top: 15px;
 }
+
 .page {
   border: 1px solid black;
   padding: 10px;
 }
+
 .current-page {
   border: 2px solid green;
 }
-.observer{
+
+.observer {
   height: 30px;
   background: green;
 }
