@@ -10,8 +10,12 @@
       <my-button
           style="margin-left: 20px"
           @click="$router.push('/store')"
-      >Store
-      </my-button>
+      >Store</my-button>
+      <my-button
+          style="margin-left: 20px"
+          @click="$router.push('/composition')"
+      >
+        Composition</my-button>
     </div>
   </div>
 </template>
